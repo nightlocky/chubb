@@ -13,19 +13,20 @@ A simple Spring Boot backend for managing insurance claims from submission throu
 - Lombok
 - Swagger UI with springdoc-openapi
 
-## Run Kafka
+## Run with Docker
+
+Make sure Docker Desktop is running, then start the full application stack:
 
 ```bash
-docker compose up -d
+docker compose up --build
 ```
 
-Kafka listens on `localhost:9092` and the application publishes lifecycle events to `claim-lifecycle-events`.
+This starts both:
 
-## Run the Application
+- Kafka
+- Spring Boot API
 
-```bash
-mvn spring-boot:run
-```
+You do not need to run `mvn spring-boot:run` when using Docker Compose.
 
 Swagger UI is available at:
 
@@ -40,6 +41,30 @@ http://localhost:8080/h2-console
 ```
 
 Use JDBC URL `jdbc:h2:mem:claimsdb`, username `sa`, and an empty password.
+
+## Stop Docker
+
+```bash
+docker compose down
+```
+
+## Optional Local Development
+
+If you prefer to run the Spring Boot app locally with Maven, start only Kafka in Docker:
+
+```bash
+docker compose up -d kafka
+```
+
+Then run the app locally:
+
+```bash
+mvn spring-boot:run
+```
+
+In this mode, Kafka listens on `localhost:9092`.
+
+The application publishes lifecycle events to `claim-lifecycle-events`.
 
 ## Main Endpoints
 
