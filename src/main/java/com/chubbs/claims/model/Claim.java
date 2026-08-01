@@ -29,24 +29,26 @@ public class Claim {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String claimantId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String claimantEmail;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String policyType;
 
-    @Column(length = 4000)
+    @Column(nullable = false, length = 4000)
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
     private ClaimStatus status;
 
-    @Column(nullable = false, precision = 19, scale = 2)
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal liabilityAmount;
 
+    @Column(length = 100)
     private String assignedOfficerId;
 
     @Column(length = 4000)
