@@ -5,10 +5,13 @@ import com.chubbs.claims.dto.ClaimRequestDTO;
 import com.chubbs.claims.dto.ClaimResponseDTO;
 import com.chubbs.claims.service.ClaimService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
+@Validated
 @RequestMapping("/api/v1/claims")
 @RequiredArgsConstructor
 public class ClaimantController {
@@ -43,7 +48,7 @@ public class ClaimantController {
      * @return claim response
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ClaimResponseDTO> trackClaim(@PathVariable Long id) {
+    public ResponseEntity<ClaimResponseDTO> trackClaim(@PathVariable @Positive(message = "id must be positive") Long id ) {
         return ResponseEntity.ok(claimService.getClaim(id));
     }
 
@@ -56,7 +61,7 @@ public class ClaimantController {
      */
     @PatchMapping("/{id}/info")
     public ResponseEntity<ClaimResponseDTO> provideAdditionalInfo(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "id must be positive") Long id,
             @Valid @RequestBody AdditionalInfoRequestDTO request
     ) {
         return ResponseEntity.ok(claimService.provideAdditionalInfo(id, request));

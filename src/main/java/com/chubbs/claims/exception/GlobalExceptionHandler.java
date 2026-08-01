@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleHttpMessageNotReadableException(
             HttpMessageNotReadableException ex
     ) {
-        return ResponseEntity.badRequest().body(error(HttpStatus.BAD_REQUEST.value(), "Invalid request body"));
+        return ResponseEntity.badRequest().body(error(HttpStatus.BAD_REQUEST.value(), "Invalid request body. Check JSON syntax, field types, and enum values such as status."));
     }
 
     @ExceptionHandler(Exception.class)

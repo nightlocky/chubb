@@ -5,9 +5,12 @@ import com.chubbs.claims.dto.AssignmentRequestDTO;
 import com.chubbs.claims.dto.ClaimResponseDTO;
 import com.chubbs.claims.service.ClaimService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@Validated
 @RequestMapping("/api/v1/claims")
 @RequiredArgsConstructor
 public class StaffController {
@@ -42,7 +46,7 @@ public class StaffController {
      */
     @PostMapping("/{id}/assign")
     public ResponseEntity<ClaimResponseDTO> assignClaim(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "id must be positive") Long id,
             @Valid @RequestBody AssignmentRequestDTO request
     ) {
         return ResponseEntity.ok(claimService.assignClaim(id, request));
@@ -57,7 +61,7 @@ public class StaffController {
      */
     @PatchMapping("/{id}/assessment")
     public ResponseEntity<ClaimResponseDTO> assessClaim(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "id must be positive") Long id,
             @Valid @RequestBody AssessmentRequestDTO request
     ) {
         return ResponseEntity.ok(claimService.assessClaim(id, request));

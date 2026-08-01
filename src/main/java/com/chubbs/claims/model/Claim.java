@@ -29,10 +29,13 @@ public class Claim {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String claimantId;
 
+    @Column(nullable = false)
     private String claimantEmail;
 
+    @Column(nullable = false)
     private String policyType;
 
     @Column(length = 4000)
@@ -41,6 +44,7 @@ public class Claim {
     @Enumerated(EnumType.STRING)
     private ClaimStatus status;
 
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal liabilityAmount;
 
     private String assignedOfficerId;
@@ -48,10 +52,13 @@ public class Claim {
     @Column(length = 4000)
     private String staffNotes;
 
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    // Set creation and update timestamp before the claim is inserted into DB
     @PrePersist
     void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -59,6 +66,7 @@ public class Claim {
         updatedAt = now;
     }
 
+    // Refresh the update timestamp before the claim is saved
     @PreUpdate
     void onUpdate() {
         updatedAt = LocalDateTime.now();
