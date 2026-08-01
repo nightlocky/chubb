@@ -10,27 +10,21 @@ import com.chubbs.claims.model.Claim;
 import com.chubbs.claims.model.ClaimStatus;
 import com.chubbs.claims.repository.ClaimRepository;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClaimService {
 
     private final ClaimRepository claimRepository;
-    private final KafkaTemplate<String, Map<String, Object>> kafkaTemplate;
-
-    @Value("${claims.kafka.topic}")
-    private String claimLifecycleTopic;
+    private final ClaimEventPublisher claimEventPublisher;
 
     /**
      * Creates a submitted claim.
@@ -49,7 +43,14 @@ public class ClaimService {
                 .build();
 
         Claim savedClaim = claimRepository.save(claim);
-        publishLifecycleEvent(savedClaim, "CLAIM_CREATED");
+        log.info(
+                "Claim created: claimId={}, claimantId={}, status={}, liabilityAmount={}",
+                savedClaim.getId(),
+                savedClaim.getClaimantId(),
+                savedClaim.getStatus(),
+                savedClaim.getLiabilityAmount()
+        );
+        claimEventPublisher.publishLifecycleEvent(savedClaim, "CLAIM_CREATED");
         return savedClaim.getId();
     }
 
@@ -78,7 +79,13 @@ public class ClaimService {
         }
 
         Claim savedClaim = claimRepository.save(claim);
-        publishLifecycleEvent(savedClaim, "ADDITIONAL_INFO_PROVIDED");
+        log.info(
+                "Additional claim information provided: claimId={}, claimantId={}, status={}",
+                savedClaim.getId(),
+                savedClaim.getClaimantId(),
+                savedClaim.getStatus()
+        );
+        claimEventPublisher.publishLifecycleEvent(savedClaim, "ADDITIONAL_INFO_PROVIDED");
         return toResponse(savedClaim);
     }
 
@@ -107,7 +114,13 @@ public class ClaimService {
         claim.setStatus(ClaimStatus.IN_REVIEW);
 
         Claim savedClaim = claimRepository.save(claim);
-        publishLifecycleEvent(savedClaim, "CLAIM_ASSIGNED");
+        log.info(
+                "Claim assigned: claimId={}, officerId={}, status={}",
+                savedClaim.getId(),
+                savedClaim.getAssignedOfficerId(),
+                savedClaim.getStatus()
+        );
+        claimEventPublisher.publishLifecycleEvent(savedClaim, "CLAIM_ASSIGNED");
         return toResponse(savedClaim);
     }
 
@@ -139,8 +152,14 @@ public class ClaimService {
         }
 
         Claim savedClaim = claimRepository.save(claim);
+        log.info(
+                "Claim assessment updated: claimId={}, status={}, liabilityAmount={}",
+                savedClaim.getId(),
+                savedClaim.getStatus(),
+                savedClaim.getLiabilityAmount()
+        );
         if (request.getStatus() != null && previousStatus != request.getStatus()) {
-            publishLifecycleEvent(savedClaim, "CLAIM_ASSESSED");
+            claimEventPublisher.publishLifecycleEvent(savedClaim, "CLAIM_ASSESSED");
         }
         return toResponse(savedClaim);
     }
@@ -157,24 +176,14 @@ public class ClaimService {
                 ClaimStatus.INFO_REQUESTED
         );
         BigDecimal total = claimRepository.sumLiabilityAmountByStatusIn(activeStatuses);
-        return new LiabilityMetricDTO(total == null ? BigDecimal.ZERO : total);
+        BigDecimal totalLiability = total == null ? BigDecimal.ZERO : total;
+        log.info("Liability metric calculated: totalLiability={}", totalLiability);
+        return new LiabilityMetricDTO(totalLiability);
     }
 
     private Claim findClaim(Long id) {
         return claimRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Claim not found"));
-    }
-
-    private void publishLifecycleEvent(Claim claim, String action) {
-        Map<String, Object> event = new LinkedHashMap<>();
-        event.put("claimId", claim.getId());
-        event.put("claimantId", claim.getClaimantId());
-        event.put("status", claim.getStatus().name());
-        event.put("assignedOfficerId", claim.getAssignedOfficerId());
-        event.put("liabilityAmount", claim.getLiabilityAmount());
-        event.put("action", action);
-        event.put("eventTime", LocalDateTime.now().toString());
-        kafkaTemplate.send(claimLifecycleTopic, String.valueOf(claim.getId()), event);
     }
 
     private ClaimResponseDTO toResponse(Claim claim) {
