@@ -510,7 +510,7 @@ Liability metric calculated: outstandingCount=0, outstandingLiability=0, totalCo
 Liability by status calculated: submittedCount=0, submitted=0, inReviewCount=0, inReview=0, infoRequestedCount=0, infoRequested=0, settledCount=1, settled=950.00, rejectedCount=0, rejected=0
 ```
 
-## Swagger Error Tests
+## Optional Swagger Error Tests
 
 ### Blank Required Field
 
@@ -635,7 +635,7 @@ Expected body:
 }
 ```
 
-### Rate Limit
+### Optional Rate Limit Check
 
 Protected write endpoints are limited to 10 requests per 60 seconds per client IP:
 
@@ -646,7 +646,7 @@ POST  /api/v1/claims/<claimId>/assign
 PATCH /api/v1/claims/<claimId>/assessment
 ```
 
-To demo this, repeatedly call one protected write endpoint more than 10 times within 60 seconds.
+This is easier to test with curl, Postman, or scripted requests than Swagger because it requires sending more than 10 write requests within 60 seconds.
 
 Expected HTTP response:
 
@@ -703,7 +703,3 @@ claim-lifecycle-events.DLT
 ```
 
 The dead-letter topic is used when `NotificationService` fails to process an event after retries. Normal Swagger requests should not produce DLT messages because the current consumer only logs valid events.
-
-To demo the DLT flow during development, temporarily throw an exception inside `NotificationService.listen(...)`, restart the app, then create a claim from Swagger. After retries, the event should be routed to `claim-lifecycle-events.DLT` and logged by `DeadLetterNotificationService`.
-
-Do not leave intentional failure code in the final application.
