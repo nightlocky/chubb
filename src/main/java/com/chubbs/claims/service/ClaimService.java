@@ -10,7 +10,6 @@ import com.chubbs.claims.model.Claim;
 import com.chubbs.claims.model.ClaimStatus;
 import com.chubbs.claims.repository.ClaimRepository;
 import java.math.BigDecimal;
-import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -165,25 +164,89 @@ public class ClaimService {
     }
 
     /**
-     * Calculates total open liability exposure.
+     * Calculates liability exposure by claim status.
      *
      * @return liability metric
      */
     public LiabilityMetricDTO getLiabilityMetric() {
-        Collection<ClaimStatus> activeStatuses = List.of(
+        List<ClaimStatus> outstandingStatuses = List.of(
                 ClaimStatus.SUBMITTED,
                 ClaimStatus.IN_REVIEW,
                 ClaimStatus.INFO_REQUESTED
         );
-        BigDecimal total = claimRepository.sumLiabilityAmountByStatusIn(activeStatuses);
-        BigDecimal totalLiability = total == null ? BigDecimal.ZERO : total;
-        log.info("Liability metric calculated: totalLiability={}", totalLiability);
-        return new LiabilityMetricDTO(totalLiability);
+
+        long submittedCount = claimRepository.countByStatus(ClaimStatus.SUBMITTED);
+        long inReviewCount = claimRepository.countByStatus(ClaimStatus.IN_REVIEW);
+        long infoRequestedCount = claimRepository.countByStatus(ClaimStatus.INFO_REQUESTED);
+        long settledCount = claimRepository.countByStatus(ClaimStatus.SETTLED);
+        long rejectedCount = claimRepository.countByStatus(ClaimStatus.REJECTED);
+        long outstandingCount = claimRepository.countByStatusIn(outstandingStatuses);
+        long totalCount = claimRepository.count();
+
+        BigDecimal submittedLiability = getLiabilityForStatus(ClaimStatus.SUBMITTED);
+        BigDecimal inReviewLiability = getLiabilityForStatus(ClaimStatus.IN_REVIEW);
+        BigDecimal infoRequestedLiability = getLiabilityForStatus(ClaimStatus.INFO_REQUESTED);
+        BigDecimal settledLiability = getLiabilityForStatus(ClaimStatus.SETTLED);
+        BigDecimal rejectedLiability = getLiabilityForStatus(ClaimStatus.REJECTED);
+        BigDecimal outstandingLiability = getLiabilityForStatuses(outstandingStatuses);
+        BigDecimal totalLiability = submittedLiability
+                .add(inReviewLiability)
+                .add(infoRequestedLiability)
+                .add(settledLiability)
+                .add(rejectedLiability);
+
+        log.info(
+                "Liability metric calculated: outstandingCount={}, outstandingLiability={}, totalCount={}, totalLiability={}",
+                outstandingCount,
+                outstandingLiability,
+                totalCount,
+                totalLiability
+        );
+        log.info(
+                "Liability by status calculated: submittedCount={}, submitted={}, inReviewCount={}, inReview={}, infoRequestedCount={}, infoRequested={}, settledCount={}, settled={}, rejectedCount={}, rejected={}",
+                submittedCount,
+                submittedLiability,
+                inReviewCount,
+                inReviewLiability,
+                infoRequestedCount,
+                infoRequestedLiability,
+                settledCount,
+                settledLiability,
+                rejectedCount,
+                rejectedLiability
+        );
+
+        return LiabilityMetricDTO.builder()
+                .submittedCount(submittedCount)
+                .submittedLiability(submittedLiability)
+                .inReviewCount(inReviewCount)
+                .inReviewLiability(inReviewLiability)
+                .infoRequestedCount(infoRequestedCount)
+                .infoRequestedLiability(infoRequestedLiability)
+                .settledCount(settledCount)
+                .settledLiability(settledLiability)
+                .rejectedCount(rejectedCount)
+                .rejectedLiability(rejectedLiability)
+                .outstandingCount(outstandingCount)
+                .outstandingLiability(outstandingLiability)
+                .totalCount(totalCount)
+                .totalLiability(totalLiability)
+                .build();
     }
 
     private Claim findClaim(Long id) {
         return claimRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Claim not found"));
+    }
+
+    private BigDecimal getLiabilityForStatus(ClaimStatus status) {
+        BigDecimal total = claimRepository.sumLiabilityAmountByStatus(status);
+        return total == null ? BigDecimal.ZERO : total;
+    }
+
+    private BigDecimal getLiabilityForStatuses(List<ClaimStatus> statuses) {
+        BigDecimal total = claimRepository.sumLiabilityAmountByStatusIn(statuses);
+        return total == null ? BigDecimal.ZERO : total;
     }
 
     private ClaimResponseDTO toResponse(Claim claim) {

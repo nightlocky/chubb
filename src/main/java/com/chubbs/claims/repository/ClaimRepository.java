@@ -15,4 +15,11 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
 
     @Query("select sum(c.liabilityAmount) from Claim c where c.status in :statuses")
     BigDecimal sumLiabilityAmountByStatusIn(@Param("statuses") Collection<ClaimStatus> statuses);
+
+    @Query("select sum(c.liabilityAmount) from Claim c where c.status = :status")
+    BigDecimal sumLiabilityAmountByStatus(@Param("status") ClaimStatus status);
+
+    long countByStatus(ClaimStatus status);
+
+    long countByStatusIn(Collection<ClaimStatus> statuses);
 }

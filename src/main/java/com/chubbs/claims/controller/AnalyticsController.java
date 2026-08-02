@@ -16,7 +16,7 @@ public class AnalyticsController {
     private final ClaimService claimService;
 
     /**
-     * Calculates total active claim liability.
+     * Calculates claim liability by status.
      *
      * @return liability metric
      */
