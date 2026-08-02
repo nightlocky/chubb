@@ -48,24 +48,6 @@ Use JDBC URL `jdbc:h2:mem:claimsdb`, username `sa`, and an empty password.
 docker compose down
 ```
 
-## Optional Local Development
-
-If you prefer to run the Spring Boot app locally with Maven, start only Kafka in Docker:
-
-```bash
-docker compose up -d kafka
-```
-
-Then run the app locally:
-
-```bash
-mvn spring-boot:run
-```
-
-In this mode, Kafka listens on `localhost:9092`.
-
-The application publishes lifecycle events to `claim-lifecycle-events`.
-
 ## Main Endpoints
 
 - `POST /api/v1/claims` - create a claim
@@ -89,8 +71,6 @@ If running with Docker, watch application and Kafka logs in another terminal:
 ```bash
 docker compose logs -f app kafka
 ```
-
-If running locally with Maven, watch the terminal where `mvn spring-boot:run` is running.
 
 Use the generated claim id from the create claim response for later steps. The examples below use `<claimId>`.
 
